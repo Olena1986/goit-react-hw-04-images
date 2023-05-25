@@ -5,7 +5,7 @@ axios.defaults.baseURL = 'https://pixabay.com/api/';
 
 const API_KEY = '35978039-e1b43f028e4248e636af167c6';
 
-export const fetchImages = async (query, page = 1, perPage = 12) => {
+export const fetchImagesApi = async (query, page = 1, perPage = 12) => {
   try {
     const response = await axios.get('/', {
       params: {
@@ -31,7 +31,7 @@ export const fetchImages = async (query, page = 1, perPage = 12) => {
   }
 };
 
-fetchImages.propTypes = {
+fetchImagesApi.propTypes = {
   query: PropTypes.string.isRequired,
   page: PropTypes.number,
   perPage: PropTypes.number,

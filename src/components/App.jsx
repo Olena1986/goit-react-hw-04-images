@@ -1,119 +1,119 @@
-import React, { Component } from 'react';
+import React, { useEffect, useReducer,useCallback } from 'react';
 import Searchbar from './searchBar/SearchBar';
 import ImageGallery from './imageGallery/ImageGallery';
 import Button from './Button/Button';
-import Loader from './Loader/Loader';
 import Modal from './Modal/Modal';
-import { fetchImages } from '../servises/api.js';
 import { AppStyle } from './App.styled';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { fetchImagesApi } from 'servises/api';
+import { Loader } from './Loader/Loader';
 
-class App extends Component {
-  state = {
-    searchQuery: '',
-    images: [],
-    selectedImage: null,
-    isLoading: false,
-    page: 1,
-    totalPage: 1,
-  };
+const App = () => {
 
-  componentDidMount() {
-    this.fetchImages();
+const initialState = {
+  searchQuery: '',
+  images: [],
+  selectedImage: null,
+  isLoading: false,
+  page: 1,
+  totalPage: 1,
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_SEARCH_QUERY':
+      return { ...state, searchQuery: action.payload };
+    case 'SET_IMAGES':
+      return { ...state, images: action.payload };
+    case 'SET_SELECTED_IMAGE':
+      return { ...state, selectedImage: action.payload };
+    case 'SET_IS_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_PAGE':
+      return { ...state, page: action.payload };
+    case 'SET_TOTAL_PAGE':
+      return { ...state, totalPage: action.payload };
+    default:
+      return state;
   }
+};
 
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.searchQuery !== this.state.searchQuery ||
-      prevState.page !== this.state.page
-    ) {
-      this.fetchImages();
-    }
-  }
 
-  fetchImages = async () => {
-    try {
-      const { searchQuery, page } = this.state;
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { searchQuery, images, selectedImage, isLoading, page, totalPage } = state;
 
-      this.setState({
-        isLoading: true,
+
+const fetchImages = useCallback(async () => {
+  try {
+    dispatch({ type: 'SET_IS_LOADING', payload: true });
+
+    const fetchedImages = await fetchImagesApi(searchQuery, page);
+
+    dispatch({ type: 'SET_IMAGES', payload: page === 1 ? fetchedImages.imgData : [...images, ...fetchedImages.imgData] });
+    dispatch({ type: 'SET_TOTAL_PAGE', payload: Math.ceil(fetchedImages.total / 12) });
+    dispatch({ type: 'SET_IS_LOADING', payload: false });
+
+    if (fetchedImages.length === 0) {
+      toast.info('No images found.', {
+        position: toast.POSITION.BOTTOM_CENTER,
       });
-
-      const images = await fetchImages(searchQuery, page);
-
-      this.setState(prevState => ({
-        images:
-          page === 1
-            ? images.imgData
-            : [...prevState.images, ...images.imgData],
-        isLoading: false,
-        totalPage: Math.ceil(images.total / 12),
-      }));
-
-      if (images.length === 0) {
-        toast.info('No images found.', {
-          position: toast.POSITION.BOTTOM_CENTER,
-        });
-      }
-    } catch (error) {
-      this.setState({ isLoading: false });
-      toast.error('Error fetching images');
     }
-  };
+  } catch (error) {
+    dispatch({ type: 'SET_IS_LOADING', payload: false });
+    toast.error('Error fetching images');
+  }
+}, [searchQuery, page,images]);
 
-  handleSearchSubmit = query => {
+useEffect(() => {
+  fetchImages();
+
+}, [fetchImages]);
+useEffect(() => {
+  if (searchQuery !== '' || page !== 1) {
+    fetchImages();
+  }
+}, [searchQuery, page,fetchImages]);
+
+  const handleSearchSubmit = query => {
     if (!query) {
       toast.error('Please enter a search query');
       return;
     }
-    this.setState({
-      searchQuery: query,
-      images: [],
-      page: 1,
-    });
+
+    dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
+    dispatch({ type: 'SET_IMAGES', payload: [] });
+    dispatch({ type: 'SET_PAGE', payload: 1 });
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const handleLoadMore = () => {
+    dispatch({ type: 'SET_PAGE', payload: page + 1 });
   };
 
-  handleImageClick = image => {
-    this.setState({
-      selectedImage: image,
-    });
+  const handleImageClick = image => {
+    dispatch({ type: 'SET_SELECTED_IMAGE', payload: image });
   };
 
-  handleCloseModal = () => {
-    this.setState({
-      selectedImage: null,
-    });
+  const handleCloseModal = () => {
+    dispatch({ type: 'SET_SELECTED_IMAGE', payload: null });
   };
 
-  render() {
-    const { images, selectedImage, isLoading } = this.state;
-    const { page, totalPage } = this.state;
-    const hasMoreImages = page < totalPage;
+  const hasMoreImages = page < totalPage;
 
-    return (
-      <AppStyle.Appform>
-        <Searchbar onSubmit={this.handleSearchSubmit} />
-        <ImageGallery images={images} onImageClick={this.handleImageClick} />
-        {isLoading && <Loader />}
-        {hasMoreImages && <Button onClick={this.handleLoadMore} />}
+  return (
+    <AppStyle.Appform>
+      <Searchbar onSubmit={handleSearchSubmit} />
+      <ImageGallery images={images} onImageClick={handleImageClick} />
+      {isLoading && <Loader />}
+      {hasMoreImages && <Button onClick={handleLoadMore} />}
 
-        {selectedImage && (
-          <Modal
-            imageUrl={selectedImage.largeImageURL}
-            onClose={this.handleCloseModal}
-          />
-        )}
-        <ToastContainer autoClose={1000} />
-      </AppStyle.Appform>
-    );
-  }
-}
+      {selectedImage && (
+        <Modal imageUrl={selectedImage.largeImageURL} onClose={handleCloseModal} />
+      )}
+      <ToastContainer autoClose={1000} />
+    </AppStyle.Appform>
+  );
+};
 
 export default App;
+
