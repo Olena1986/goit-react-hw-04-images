@@ -44,31 +44,33 @@ const reducer = (state, action) => {
   const { searchQuery, images, selectedImage, isLoading, page, totalPage } = state;
 
 
-const fetchImages = useCallback(async () => {
-  try {
-    dispatch({ type: 'SET_IS_LOADING', payload: true });
-
-    const fetchedImages = await fetchImagesApi(searchQuery, page);
-
-    dispatch({ type: 'SET_IMAGES', payload: page === 1 ? fetchedImages.imgData : [...images, ...fetchedImages.imgData] });
-    dispatch({ type: 'SET_TOTAL_PAGE', payload: Math.ceil(fetchedImages.total / 12) });
-    dispatch({ type: 'SET_IS_LOADING', payload: false });
-
-    if (fetchedImages.length === 0) {
-      toast.info('No images found.', {
-        position: toast.POSITION.BOTTOM_CENTER,
-      });
+  const fetchImages = useCallback(async () => {
+    try {
+      dispatch({ type: 'SET_IS_LOADING', payload: true });
+  
+      const fetchedImages = await fetchImagesApi(searchQuery, page);
+  
+      dispatch({ type: 'SET_IMAGES', payload: fetchedImages.imgData });
+      dispatch({ type: 'SET_TOTAL_PAGE', payload: Math.ceil(fetchedImages.total / 12) });
+      dispatch({ type: 'SET_IS_LOADING', payload: false });
+  
+      if (fetchedImages.imgData.length === 0) {
+        toast.info('No images found.', {
+          position: toast.POSITION.BOTTOM_CENTER,
+        });
+      }
+    } catch (error) {
+      dispatch({ type: 'SET_IS_LOADING', payload: false });
+      toast.error('Error fetching images');
     }
-  } catch (error) {
-    dispatch({ type: 'SET_IS_LOADING', payload: false });
-    toast.error('Error fetching images');
-  }
-}, [searchQuery, page,images]);
-
+  }, [searchQuery, page]);
+  
+  
 useEffect(() => {
   fetchImages();
 
 }, [fetchImages]);
+
 useEffect(() => {
   if (searchQuery !== '' || page !== 1) {
     fetchImages();
