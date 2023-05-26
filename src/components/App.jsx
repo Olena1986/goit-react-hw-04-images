@@ -25,7 +25,7 @@ const reducer = (state, action) => {
     case 'SET_SEARCH_QUERY':
       return { ...state, searchQuery: action.payload };
     case 'SET_IMAGES':
-      return { ...state, images: action.payload };
+      return { ...state, images: [...state.images,...action.payload] };
     case 'SET_SELECTED_IMAGE':
       return { ...state, selectedImage: action.payload };
     case 'SET_IS_LOADING':
@@ -49,8 +49,7 @@ const reducer = (state, action) => {
       dispatch({ type: 'SET_IS_LOADING', payload: true });
   
       const fetchedImages = await fetchImagesApi(searchQuery, page);
-  
-      dispatch({ type: 'SET_IMAGES', payload: fetchedImages.imgData });
+      dispatch({ type: 'SET_IMAGES', payload:fetchedImages.imgData });
       dispatch({ type: 'SET_TOTAL_PAGE', payload: Math.ceil(fetchedImages.total / 12) });
       dispatch({ type: 'SET_IS_LOADING', payload: false });
   
