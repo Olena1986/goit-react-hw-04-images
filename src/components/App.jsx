@@ -23,11 +23,9 @@ const initialState = {
 const reducer = (state, action) => {
   switch (action.type) {
     case 'SET_SEARCH_QUERY':
-     
       return { ...state, searchQuery: action.payload, images: [], page: 1 };
     case 'SET_IMAGES':
-      return { ...state, images: action.payload };
-      
+      return { ...state, images: [...state.images, ...action.payload] };
     case 'SET_SELECTED_IMAGE':
       return { ...state, selectedImage: action.payload };
     case 'SET_IS_LOADING':
@@ -88,7 +86,7 @@ useEffect(() => {
     dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
     dispatch({ type: 'SET_IMAGES', payload: [] });
     dispatch({ type: 'SET_PAGE', payload: 1 });
-    fetchImages();
+   
   };
 
   const handleLoadMore = () => {
